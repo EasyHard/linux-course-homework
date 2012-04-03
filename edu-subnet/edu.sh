@@ -1,5 +1,42 @@
 #!/bin/sh
 
+mode="mask-length"
+
+Error()
+{
+    if [ -n $1 ]; then
+        echo "Error: $1"
+    fi
+    cat <<EOF
+Usage: `basename $0` [-w] file
+    -w  Enable adress wildcard mode. Output looks like
+            162.105.0.0 0.0.255.255
+            166.111.0.0 0.0.255.255
+        Otherwise, Output looks like
+            162.105.0.0 16
+            166.111.0.0 16
+    file  Path to the progressing file.
+EOF
+    exit 1
+}
+
+while getopt :w OPTION; do
+    case "$OPTION" in
+    w)mode="netmask"
+    *)
+        Error "Wrong option"
+done
+
+shift (($OPTIND-1))
+if [ -n $1 ]; then
+    Error "Not a file"
+fi
+
+if [ ! -f $1 ]; then
+    Error "$1 not a file"
+fi
+
+
 rest2mask[0]="0"
 rest2mask[1]="128"
 rest2mask[2]="192"
@@ -21,22 +58,28 @@ for addr in $iplist; do
         ip="$ip.0"
     done
 
-    max=$(echo "$length/8"|bc)
-    rest=$(echo "$length - $length/8*8"|bc)
+    if [ mode -eq "mask-length" ]; then
+        echo "$addr -> $ip $length"        
+        continue
+    fi
+    
+    ((masklength=24-$length))
+    max=$(echo "$masklength/8"|bc)
+    rest=$(echo "$masklength - $masklength/8*8"|bc)
     # echo "max: $max, rest: $rest"
-    netmask=""
+    
     for i in `seq 1 $max`; do
-        netmask="${netmask}255."
+        netmask=".255${netmask}"
     done
     # echo "netmask: $netmask"
     restmask=${rest2mask[$rest]}
-    netmask="$netmask$restmask"
+    netmask="$restmask$netmask"
     ((maskneed=4-max-1))
     for i in `seq 1 $maskneed`; do
-        netmask="$netmask.0"
+        netmask="0.$netmask"
     done
 
-    echo "$addr -> $ip $length | $netmask"
+    echo "$addr -> $ip $netmask"
 
 
 done
