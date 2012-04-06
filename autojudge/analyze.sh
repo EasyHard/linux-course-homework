@@ -1,7 +1,7 @@
 #!/bin/bash
 
 verbose=
-duration=1
+duration=2
 exec 2>/dev/null
 Log()
 {
@@ -12,7 +12,12 @@ Log()
 Error()
 {
     cat <<EOF
+
 USAGE:
+`basename $0` is a auto judging which run bundles of programs
+(like students' homework) and compare their output to the standard
+answer. It assumes that there is no interaction when the program
+running, and the program will finish in time like 1 sec or 2.
 $0 -p parent_dir -w relate_path -c template ARGS
     -p  the parent dir of user dir
     -w  path to the student script, begin fro the student's dir
@@ -53,18 +58,24 @@ for user_dir in $(ls $pdir) ; do
     if [ -d "$pdir/$user_dir" ]; then
         path="$pdir/$user_dir/$rpath"
         Log "path: $path"
-        ($path $arg >$tmpfile)&
+        # ($path $arg >$tmpfile)&
+        # pid=$!
+        # sleep $duration
+        date
+        timeout 2>/dev/null $duration $path $arg >$tmpfile
+        date
         pid=$!
         Log "pid: $pid"
-        sleep $duration
-        timeout 2>/dev/null $duration $path $arg >$tmpfile
         case $? in
             127)echo "$user_dir NOTEXISTS NO";;
             126)echo "$user_dir EXISTS NO";;
             125)echo "This should not happend";;
             124)echo "$user_dir EXISTS TIMEOUT";;
             *)
-                diff -q $tmpfile $template>/dev/null
+                #Anyway, do this cleanup
+                kill -9 -"$pid"
+
+                diff -bB -q $tmpfile $template>/dev/null
                 # Log "$(cat $tmpfile)"
                 # Log "-------"
                 # Log "$(cat $template)"
