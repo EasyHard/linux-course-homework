@@ -47,14 +47,14 @@ fi
 # 11.........1 to decimail value
 # \---n bit--/
 # it is useful for generating netmask
-rest2mask[0]="0"
-rest2mask[1]="1"
-rest2mask[2]="3"
-rest2mask[3]="7"
-rest2mask[4]="15"
-rest2mask[5]="31"
-rest2mask[6]="63"
-rest2mask[7]="127"
+rest2mask_0="0"
+rest2mask_1="1"
+rest2mask_2="3"
+rest2mask_3="7"
+rest2mask_4="15"
+rest2mask_5="31"
+rest2mask_6="63"
+rest2mask_7="127"
 
 filename=$1
 #reformat the input file. Make it more easy to handle
@@ -64,12 +64,12 @@ for addr in $iplist; do
     ndot=$(echo $addr |grep -F -o '.' |wc -l)
     ip=$(echo $addr|cut -d/ -f1)
     length=$(echo $addr|cut -d/ -f2)
-    ((need=3-$ndot))
+    need=`expr 3 - $ndot`
     for i in `seq 1 $need`; do
         ip="$ip.0"
     done
 
-    if [ $mode == "mask-length" ]; then
+    if [ $mode = "mask-length" ]; then
         echo "$ip $length"
         continue
     fi
@@ -89,7 +89,8 @@ for addr in $iplist; do
     # seven bits of `1` left, I transform it by
     # an quickly table check.
 
-    ((masklength=32-$length))
+    masklength=`expr 32 - $length`
+    # echo "masklength = $masklength"
     max=$(echo "$masklength/8"|bc)
     rest=$(echo "$masklength%8"|bc)
     # echo "max: $max, rest: $rest"
@@ -98,9 +99,10 @@ for addr in $iplist; do
         netmask=".255${netmask}"
     done
     # echo "netmask: $netmask"
-    restmask=${rest2mask[$rest]}
+    eval "restmask=\${rest2mask_$rest}"
+    # echo $restmask
     netmask="$restmask$netmask"
-    ((maskneed=4-max-1))
+    maskneed=`expr 4 - $max - 1`
     for i in `seq 1 $maskneed`; do
         netmask="0.$netmask"
     done
