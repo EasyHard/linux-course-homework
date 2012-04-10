@@ -70,7 +70,7 @@ for addr in $iplist; do
     done
 
     if [ $mode == "mask-length" ]; then
-        echo "$addr -> $ip $length"
+        echo "$ip $length"
         continue
     fi
 
@@ -105,7 +105,7 @@ for addr in $iplist; do
         netmask="0.$netmask"
     done
 
-    echo "$addr -> $ip $netmask"
+    echo "$ip $netmask"
 
 
 done
