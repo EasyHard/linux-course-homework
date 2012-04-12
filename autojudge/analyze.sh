@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/dash
 
 verbose=
 duration=2
@@ -9,6 +9,7 @@ Log()
         echo $1
     fi
 }
+
 Error()
 {
     cat <<EOF
@@ -26,6 +27,8 @@ $0 -p parent_dir -w relate_path -c template ARGS
 EOF
     exit 1
 }
+
+
 
 while getopts :p:w:c: OPTION ; do
     case $OPTION in
@@ -58,33 +61,40 @@ for user_dir in $(ls $pdir) ; do
     if [ -d "$pdir/$user_dir" ]; then
         path="$pdir/$user_dir/$rpath"
         Log "path: $path"
-        # ($path $arg >$tmpfile)&
-        # pid=$!
-        # sleep $duration
-        date
-        timeout 2>/dev/null $duration $path $arg >$tmpfile
-        date
-        pid=$!
-        Log "pid: $pid"
-        case $? in
-            127)echo "$user_dir NOTEXISTS NO";;
-            126)echo "$user_dir EXISTS NO";;
-            125)echo "This should not happend";;
-            124)echo "$user_dir EXISTS TIMEOUT";;
-            *)
-                #Anyway, do this cleanup
-                kill -9 -"$pid"
 
-                diff -bB -q $tmpfile $template>/dev/null
-                # Log "$(cat $tmpfile)"
-                # Log "-------"
-                # Log "$(cat $template)"
-                if [ $? -eq 0 ]; then
-                    echo "$user_dir EXISTS YES"
-                else
-                    echo "$user_dir EXISTS NO"
-                fi
-        esac
+        if [ ! -f "$path" ]; then
+            echo "$user_dir NOTEXISTS NO"
+            continue
+        fi
+
+        if [ ! -x "$path" ]; then
+            echo "$user_dir EXISTS NO"
+            continue
+        fi
+
+        $path >$tmpfile &
+        pid=$!
+        sleep $duration&&kill -9 $pid&&kill -9 -"$pid" &
+        wait $pid
+
+        if [ $? -gt 128 ]; then
+            timeout_flag=1
+        else
+            timeout_flag=
+        fi
+
+
+        if [ $timeout_flag ]; then
+            echo "$user_dir EXISTS TIMEOUT"
+            continue
+        fi
+
+        diff -bB -q $tmpfile $template>/dev/null
+        if [ $? -eq 0 ]; then
+            echo "$user_dir EXISTS YES"
+        else
+            echo "$user_dir EXISTS NO"
+        fi
     fi
 done
 
