@@ -1,0 +1,4 @@
+To use this script, just run ./daylibuild.sh. But before
+you begin, make sure you setup sendmail, report sending
+is based on it. Also, check ./config, the configuration file
+and comments tell a lot. Thank you.

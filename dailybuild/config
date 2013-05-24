@@ -1,0 +1,23 @@
+# This file is the configuration of daylibuild
+
+# svnrepo is the address of checkout repo. Only svn repo is supported
+svnrepo="http://i.pku.edu.cn/svn/gst-pipeliner/trunk/"
+# file to record log
+logfile="daylibuild.log"
+# checkedver version is the lastest checkout version. If current version is not newer than it, daylibuild will not build anything
+checkedver="60"
+# Waiting how many time between two new version checking
+duration="1m"
+# If daylibuild failed, who should be sent a report.
+sendto="liuzhiyou.cs@gmail.com fdyuelie@gmail.com"
+
+# This function should compile the checkout source in $1,
+# If compilation failed, return false (run false as last command)
+compile() {
+    cd "$1/src"&&cmake .&&make
+}
+
+# You can do any tests you want in this function. I just leave it to do some compilation output checking. If test failed, return false
+runtest() {
+    stat "$1/src/gst-pipeliner"
+}
